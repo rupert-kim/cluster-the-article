@@ -38,6 +38,10 @@ class DaumNewsParse:
         data = requests.get(url)
         ArticleHtml = BeautifulSoup(data.text, 'html.parser')
 
+        failedData = ArticleHtml.find('div',attrs={'class':'empty_view'})
+        if failedData is not None:
+            return None
+
         response = ArticleHtml.find('div',attrs={'id':'harmonyContainer'})
         return response.text
 
