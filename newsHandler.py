@@ -1,29 +1,23 @@
 
 
 from daumNewsParser import DaumNewsParse
-from newsCluster import NewsCluster,NewsNode
+from newsCluster import NewsCluster
 
 parser = DaumNewsParse()
 clusterManager = NewsCluster()
-aa = NewsNode()
 newsNodes = []
-for urlObject in parser.parseUrlList(paramDate='20050101'):
+articleList = []
+urlList = parser.parseUrlList(paramDate='20160115')
+print(urlList.__len__())
+number = 0
+for urlObject in urlList:
+    number+=1
+    print(number)
     article = parser.parseArticle(url=urlObject['href'])
+    if article is not None:
+        articleList.append(article)
 
-    newsNodes.append(clusterManager.extractTf(article))
+clusterManager.runOfKMeans(articleList)
 
-for news in newsNodes:
-    for term in news.tfMap.keys():
-        news.tfMap[term]['idf'] = clusterManager.getIdfValue(newsNodes,term)
-        news.tfMap[term]['tfidf'] = news.tfMap[term]['tf'] * news.tfMap[term]['idf']
 
-maxSimilarity = 0
-maxGroup = []
-for news in newsNodes:
-    for compareNews in newsNodes:
-        if news is not compareNews:
-            similarity = clusterManager.getSimilarity(news,compareNews)
-            if similarity > maxSimilarity:
-                maxSimilarity = similarity
-                maxGroup.append([news,compareNews])
-
+print('-----')
