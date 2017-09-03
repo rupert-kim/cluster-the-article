@@ -68,16 +68,16 @@ class NewsCluster:
         initialKValue = round(sqrt(self.newsNodes.__len__() / 2))
         # initialKValue = 35
         clusterList = []
-        dunnIndex = 0
-        kWeight = 0
+        RSSValue = 0
+        kWeight = 17
         while True:
             anotherClusterList = self.getClustersOfKMeans(self.newsNodes,initialKValue+kWeight)
-            anotherDunnIndex = self.evalDunnIndex(anotherClusterList)
+            anotherRSSValue = self.evalRSS(anotherClusterList)
             # if clusterList is not None and dunnIndex > anotherDunnIndex:
             #     return clusterList
             clusterList = anotherClusterList
-            print('k: '+str(kWeight)+', '+str(anotherDunnIndex*1000000))
-            dunnIndex = anotherDunnIndex
+            print('k: '+str(kWeight)+', '+str(anotherRSSValue))
+            RSSValue = anotherRSSValue
             kWeight += 1
 
 
@@ -91,19 +91,31 @@ class NewsCluster:
 
         for idx in range(20):
             clusterList = self.applyClusterInKMeans(newsNodes, clusterList)
-            anotherDunnIndex = self.evalDunnIndex(clusterList)
-            print(str(anotherDunnIndex*1000000))
+            anotherRSSValue = self.evalRSS(clusterList)
+            print(str(anotherRSSValue))
             # for element in clusterList[0]['elementList']:
                 # print(element.simValue)
                 # print(element.article)
             # print('--------------')
-            # if idx == 9 :
-            #     break
+            if idx == 8 :
+                break
             for cluster in clusterList:
                 cluster['centroid'] = self.makeCentroid(cluster)
                 cluster['elementList'] = []
 
         return clusterList
+
+    def evalRSS(self,clusterList):
+        rssOfAll = 0
+        for cluster in clusterList:
+            centroid = cluster['centroid']
+            rssOfOneCluster = 0
+            for element in cluster['elementList']:
+                distanceWithCenter = 1 - element.simValue
+                rssOfOneCluster += pow(distanceWithCenter,2)
+
+            rssOfAll += rssOfOneCluster
+        return rssOfAll
 
 
     def evalDunnIndex(self,clusterList):
@@ -144,7 +156,51 @@ class NewsCluster:
 
             news.simValue = highestSimilarity
             clusterList[selectedListIdx]['elementList'].append(news)
+        idxList = self.getEmptyClusterIdxs(clusterList)
+        if not idxList:
+            return clusterList
+        return self.getAdjustedClusterList(newsNodes,clusterList,idxList)
+
+    def getAdjustedClusterList(self, newsNodes, clusterList, emptiedIdxList):
+        lowestNewsList = []
+        for idx in range(emptiedIdxList.__len__()):
+            lowestSimilarNews = None
+            tmpSim = 1
+            for news in newsNodes:
+                if news.simValue < tmpSim and news not in lowestNewsList:
+                    tmpSim = news.simValue
+                    lowestSimilarNews = news
+            lowestNewsList.append(lowestSimilarNews)
+
+        for news in lowestNewsList:
+            for cluster in clusterList:
+                elementListOfCluster = cluster['elementList']
+                isEliminated = False
+                for idx,elementNews in enumerate(elementListOfCluster):
+                    if news is elementNews:
+                        del elementListOfCluster[idx]
+                        isEliminated = True
+                        break
+                if isEliminated:
+                    break
+
+        for idx in emptiedIdxList:
+            oneOfLowest = lowestNewsList.pop()
+            oneOfLowest.simValue = 1
+            clusterList[idx] = {'centroid': oneOfLowest, 'elementList': [oneOfLowest]}
+
         return clusterList
+
+
+
+
+    def getEmptyClusterIdxs(self,clusterList):
+        idxList = []
+        for idx, cluster in enumerate(clusterList):
+            if not cluster['elementList']:
+                idxList.append(idx)
+        return idxList
+
     def makeCentroid(self,cluster):
         # 그저 tfidf값을 재계산 안하고 있는 그대로 평균을 내도 괜찮을까?
         elementList = cluster['elementList']
@@ -162,6 +218,7 @@ class NewsCluster:
                     tfElement['tf'] += pureTfElement['tf']
                     tfElement['tfidf'] += pureTfElement['tfidf']
         for key, tfElement in tfMap.items():
+            # @ Critical Issue : 수차례 진행될 시 값이 점점 감소하는 버그 발생
             tfElement['count'] /= lengthOfCluster
             tfElement['tf'] /= lengthOfCluster
             tfElement['tfidf'] /= lengthOfCluster
@@ -174,6 +231,8 @@ class NewsCluster:
         self.extractTfFromArticleList(articleList)
         self.setIdfInNewsNode()
         return self.getClustersOfKMeansHandler()
+
+
 
 
 class NewsNode:
