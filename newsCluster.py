@@ -211,14 +211,17 @@ class NewsCluster:
             for key, pureTfElement in listElement.tfMap.items():
 
                 if key not in tfMap:
-                    tfMap[key] = pureTfElement
+                    tfMap[key] = {}
+                    tfElement = tfMap[key]
+                    tfElement['count'] = pureTfElement['count']
+                    tfElement['tf'] = pureTfElement['tf']
+                    tfElement['tfidf'] = pureTfElement['tfidf']
                 else:
                     tfElement = tfMap[key]
                     tfElement['count'] += pureTfElement['count']
                     tfElement['tf'] += pureTfElement['tf']
                     tfElement['tfidf'] += pureTfElement['tfidf']
         for key, tfElement in tfMap.items():
-            # @ Critical Issue : 수차례 진행될 시 값이 점점 감소하는 버그 발생
             tfElement['count'] /= lengthOfCluster
             tfElement['tf'] /= lengthOfCluster
             tfElement['tfidf'] /= lengthOfCluster
