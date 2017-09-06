@@ -24,11 +24,12 @@ class NewsCluster:
         newsNode.article = article
         for element in afterNLP:
             newsNode.__add__(element)
-        for key in newsNode.tfMap.keys():
-            newsNode.tfMap[key]['tf'] = 0.5 + 0.5 * newsNode.tfMap[key]['count'] / newsNode.countTerms
+        self.calcTf(newsNode)
 
         return newsNode
-
+    def calcTf(self,newsNode):
+        for key in newsNode.tfMap.keys():
+            newsNode.tfMap[key]['tf'] = 0.5 + 0.5 * newsNode.tfMap[key]['count'] / newsNode.countTerms
     # def extractIdf(self):
     def setIdfInNewsNode(self):
         for news in self.newsNodes:
@@ -75,6 +76,7 @@ class NewsCluster:
             anotherRSSValue = self.evalRSS(anotherClusterList)
             # if clusterList is not None and dunnIndex > anotherDunnIndex:
             #     return clusterList
+            print(RSSValue / anotherRSSValue)
             clusterList = anotherClusterList
             print('k: '+str(kWeight)+', '+str(anotherRSSValue))
             RSSValue = anotherRSSValue
@@ -208,7 +210,6 @@ class NewsCluster:
 
         tfMap = {}
         allarticles = ""
-        lengthOfCluster = newsList.__len__()
         for listElement in newsList:
             allarticles += listElement.article
             for key, pureTfElement in listElement.tfMap.items():
@@ -217,20 +218,18 @@ class NewsCluster:
                     tfMap[key] = {}
                     tfElement = tfMap[key]
                     tfElement['count'] = pureTfElement['count']
-                    tfElement['tf'] = pureTfElement['tf']
-                    tfElement['tfidf'] = pureTfElement['tfidf']
+                    tfElement['idf'] = pureTfElement['idf']
                 else:
                     tfElement = tfMap[key]
                     tfElement['count'] += pureTfElement['count']
-                    tfElement['tf'] += pureTfElement['tf']
-                    tfElement['tfidf'] += pureTfElement['tfidf']
-        for key, tfElement in tfMap.items():
-            tfElement['count'] /= lengthOfCluster
-            tfElement['tf'] /= lengthOfCluster
-            tfElement['tfidf'] /= lengthOfCluster
+
         newsNodeForCentroid = NewsNode()
         newsNodeForCentroid.tfMap = tfMap
-        newsNodeForCentroid.countTerms = 0
+        newsNodeForCentroid.recalcCountTerms()
+        self.calcTf(newsNodeForCentroid)
+        for key in tfMap.keys():
+            tfMap[key]['tfidf'] = tfMap[key]['tf'] * tfMap[key]['idf']
+
         newsNodeForCentroid.article = allarticles
         return newsNodeForCentroid
 
@@ -247,30 +246,43 @@ class NewsCluster:
         if self.newsNodes.__len__() < kValue:
             raise Exception('k is must smaller than count of nodes')
         clusterList = []
-        for news in self.newsNodes:
+        for idx, news in enumerate(self.newsNodes):
             centroid = news
-            clusterList.append({'centroid': centroid, 'elementList': []})
+            clusterList.append({'centroid': centroid, 'elementList': [], 'HId':idx})
+
+        simList = []
+        for idxX, clusterX in enumerate(clusterList):
+            for idxY, clusterY in enumerate(clusterList):
+                if idxX <= idxY:
+                    break
+                sim = self.getSimilarity(clusterX['centroid'],clusterY['centroid'])
+                clusterX['HACSimilarity'] = sim
+                simList.append({'sim':sim,'x':clusterX,'y':clusterY})
+
+
+
         while clusterList.__len__() != kValue:
-            highestSim = 0
-            selectedX = None
-            selectedY = None
 
-            for idxX, clusterX in enumerate(clusterList):
-                for idxY, clusterY in enumerate(clusterList):
-                    if idxX <= idxY:
-                        break
-                    sim = self.getSimilarity(clusterX['centroid'],clusterY['centroid'])
-                    if highestSim < sim:
-                        highestSim = sim
-                        selectedX = clusterX
-                        selectedY = clusterY
+            simObject = max(simList, key=lambda item: item['sim'])
+            simObjectX = simObject['x']['centroid']
+            simObjectY = simObject['y']['centroid']
 
-            # print(clusterX['centroid'].article)
-            # print("--")
-            # print(clusterY['centroid'].article)
-            # print("@@@@@@@@@@@@@@@@@@@@@@")
-            selectedX['centroid'] = self.makeCentroidWithNewsList([selectedX['centroid'],selectedY['centroid']])
-            clusterList.remove(selectedY)
+            simObjectX = self.makeCentroidWithNewsList([simObjectX, simObjectY])
+
+
+            for cluster in clusterList:
+                if cluster['HId'] == simObject['y']['HId']:
+                    clusterList.remove(cluster)
+                    break
+
+            for simLoop in simList:
+                if simLoop['x'] == simObject['y'] or simLoop['y'] == simObject['y']:
+                    simList.remove(simLoop)
+                    continue
+                if simLoop['x'] == simObject['x'] or simLoop['y'] == simObject['x']:
+                    sim = self.getSimilarity(simObjectX , simObjectY)
+                    simLoop['sim'] = sim
+
 
         return clusterList
 
@@ -289,3 +301,7 @@ class NewsNode:
         else:
             self.tfMap[element] = {'count': 1}
         self.countTerms += 1
+    def recalcCountTerms(self):
+        self.countTerms = 0
+        for key in self.tfMap.keys():
+            self.countTerms += self.tfMap[key]['count']
