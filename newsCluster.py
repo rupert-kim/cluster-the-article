@@ -1,5 +1,5 @@
 import hashlib
-
+from heapq import heappush, heappop, nlargest
 import sys
 from konlpy.tag import Mecab
 from math import log, sqrt
@@ -69,9 +69,9 @@ class NewsCluster:
         # initialKValue = 35
         clusterList = []
         RSSValue = 0
-        kWeight = 17
+        kWeight = 15
         while True:
-            anotherClusterList = self.getClustersOfKMeans(self.newsNodes,initialKValue+kWeight)
+            anotherClusterList = self.getClustersOfKMeans(initialKValue+kWeight)
             anotherRSSValue = self.evalRSS(anotherClusterList)
             # if clusterList is not None and dunnIndex > anotherDunnIndex:
             #     return clusterList
@@ -81,24 +81,23 @@ class NewsCluster:
             kWeight += 1
 
 
-    def getClustersOfKMeans(self, newsNodes, kValue):
-        if newsNodes.__len__() < kValue:
+    def getClustersOfKMeans(self, kValue):
+        if self.newsNodes.__len__() < kValue:
             raise Exception('k is must smaller than count of nodes')
-        clusterList = []
-        for news in newsNodes[0:kValue]:
-            centroid = news
-            clusterList.append({'centroid': centroid, 'elementList': []})
+        clusterList = self.getClustersOfHAC(kValue)
 
-        for idx in range(20):
-            clusterList = self.applyClusterInKMeans(newsNodes, clusterList)
+        previousRSSValue = sys.maxsize
+        while True:
+            clusterList = self.applyClusterInKMeans(self.newsNodes, clusterList)
             anotherRSSValue = self.evalRSS(clusterList)
             print(str(anotherRSSValue))
             # for element in clusterList[0]['elementList']:
                 # print(element.simValue)
                 # print(element.article)
             # print('--------------')
-            if idx == 8 :
+            if previousRSSValue == anotherRSSValue:
                 break
+            previousRSSValue = anotherRSSValue
             for cluster in clusterList:
                 cluster['centroid'] = self.makeCentroid(cluster)
                 cluster['elementList'] = []
@@ -202,12 +201,16 @@ class NewsCluster:
         return idxList
 
     def makeCentroid(self,cluster):
+        newsList = cluster['elementList']
+        return self.makeCentroidWithNewsList(newsList)
+    def makeCentroidWithNewsList(self,newsList):
         # 그저 tfidf값을 재계산 안하고 있는 그대로 평균을 내도 괜찮을까?
-        elementList = cluster['elementList']
 
         tfMap = {}
-        lengthOfCluster = cluster.__len__()
-        for listElement in elementList:
+        allarticles = ""
+        lengthOfCluster = newsList.__len__()
+        for listElement in newsList:
+            allarticles += listElement.article
             for key, pureTfElement in listElement.tfMap.items():
 
                 if key not in tfMap:
@@ -228,13 +231,48 @@ class NewsCluster:
         newsNodeForCentroid = NewsNode()
         newsNodeForCentroid.tfMap = tfMap
         newsNodeForCentroid.countTerms = 0
+        newsNodeForCentroid.article = allarticles
         return newsNodeForCentroid
 
     def runOfKMeans(self, articleList):
         self.extractTfFromArticleList(articleList)
         self.setIdfInNewsNode()
         return self.getClustersOfKMeansHandler()
+    def runOfHAC(self,articleList):
+        self.extractTfFromArticleList(articleList)
+        self.setIdfInNewsNode()
+        return self.getClustersOfHAC(10)
 
+    def getClustersOfHAC(self,kValue):
+        if self.newsNodes.__len__() < kValue:
+            raise Exception('k is must smaller than count of nodes')
+        clusterList = []
+        for news in self.newsNodes:
+            centroid = news
+            clusterList.append({'centroid': centroid, 'elementList': []})
+        while clusterList.__len__() != kValue:
+            highestSim = 0
+            selectedX = None
+            selectedY = None
+
+            for idxX, clusterX in enumerate(clusterList):
+                for idxY, clusterY in enumerate(clusterList):
+                    if idxX <= idxY:
+                        break
+                    sim = self.getSimilarity(clusterX['centroid'],clusterY['centroid'])
+                    if highestSim < sim:
+                        highestSim = sim
+                        selectedX = clusterX
+                        selectedY = clusterY
+
+            # print(clusterX['centroid'].article)
+            # print("--")
+            # print(clusterY['centroid'].article)
+            # print("@@@@@@@@@@@@@@@@@@@@@@")
+            selectedX['centroid'] = self.makeCentroidWithNewsList([selectedX['centroid'],selectedY['centroid']])
+            clusterList.remove(selectedY)
+
+        return clusterList
 
 
 
