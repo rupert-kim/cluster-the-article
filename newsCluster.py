@@ -1,4 +1,5 @@
 import hashlib
+import re
 from heapq import heappush, heappop, nlargest
 import sys
 from konlpy.tag import Mecab
@@ -18,11 +19,32 @@ class NewsCluster:
         return self.newsNodes
 
     def extractTf(self, article):
-        afterNLP = self.nlpWorker.nouns(article)
+        afterNLP = self.nlpWorker.pos(article)
 
         newsNode = NewsNode()
         newsNode.article = article
         for element in afterNLP:
+            term = element[0]
+            type = element[1]
+            # 부호 삭제
+            if bool(re.match('SF|SP|SS|SE|SO|SW|SY|SC',type)):
+                continue
+            if bool(re.match('J\D+',type)):
+                continue
+            if bool(re.match('E\D+',type)):
+                continue
+            if bool(re.match('X\D+',type)):
+                continue
+            if bool(re.match('NP\D*',type)):
+                continue
+            if bool(re.match('MAJ',type)):
+                continue
+            if type == 'VA':
+                continue
+            if type == 'VV' and type.__len__() == 1:
+                continue
+            if bool(re.search('ETM',type)):
+                continue
             newsNode.__add__(element)
         self.calcTf(newsNode)
 
@@ -56,10 +78,17 @@ class NewsCluster:
             tfidfOne = articleOne.tfMap[term]['tfidf'] if term in articleOne.tfMap.keys() else 0
             tfidfTwo = articleTwo.tfMap[term]['tfidf'] if term in articleTwo.tfMap.keys() else 0
 
-            docProductNumber += tfidfOne * tfidfTwo
+            type = articleOne.tfMap[term]['type'] if term in articleOne.tfMap.keys() else articleTwo.tfMap[term]['type']
+
+            if type == 'NNP':
+                docProductNumber += pow(tfidfOne,2) * pow(tfidfTwo,2)
+            else:
+                docProductNumber += tfidfOne * tfidfTwo
+
             euclideanLenOfOne += pow(tfidfOne, 2)
             euclideanLenOfTwo += pow(tfidfTwo, 2)
         similarity = docProductNumber / (1 + sqrt(euclideanLenOfOne) * sqrt(euclideanLenOfTwo))
+
         return similarity
 
 
@@ -219,9 +248,13 @@ class NewsCluster:
                     tfElement = tfMap[key]
                     tfElement['count'] = pureTfElement['count']
                     tfElement['idf'] = pureTfElement['idf']
+                    tfElement['type'] = pureTfElement['type']
                 else:
                     tfElement = tfMap[key]
                     tfElement['count'] += pureTfElement['count']
+
+        for key in tfMap.keys():
+            tfMap[key]['count'] /= newsList.__len__()
 
         newsNodeForCentroid = NewsNode()
         newsNodeForCentroid.tfMap = tfMap
@@ -296,10 +329,13 @@ class NewsNode:
         self.simValue = 0
 
     def __add__(self, element):
-        if element in self.tfMap.keys():
-            self.tfMap[element]['count'] = self.tfMap[element]['count'] + 1
+
+        term = element[0]
+        type = element[1]
+        if term in self.tfMap.keys():
+            self.tfMap[term]['count'] = self.tfMap[term]['count'] + 1
         else:
-            self.tfMap[element] = {'count': 1}
+            self.tfMap[term] = {'count': 1, 'type': type}
         self.countTerms += 1
     def recalcCountTerms(self):
         self.countTerms = 0
