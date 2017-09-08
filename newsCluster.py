@@ -235,10 +235,10 @@ class NewsCluster:
         newsList = cluster['elementList']
         return self.makeCentroidWithNewsList(newsList)
     def makeCentroidWithNewsList(self,newsList):
-        # 그저 tfidf값을 재계산 안하고 있는 그대로 평균을 내도 괜찮을까?
 
         tfMap = {}
         allarticles = ""
+
         for listElement in newsList:
             allarticles += listElement.article
             for key, pureTfElement in listElement.tfMap.items():
@@ -289,7 +289,6 @@ class NewsCluster:
                 if idxX <= idxY:
                     break
                 sim = self.getSimilarity(clusterX['centroid'],clusterY['centroid'])
-                clusterX['HACSimilarity'] = sim
                 simList.append({'sim':sim,'x':clusterX,'y':clusterY})
 
 
@@ -303,10 +302,13 @@ class NewsCluster:
             simObjectX = self.makeCentroidWithNewsList([simObjectX, simObjectY])
 
 
-            for cluster in clusterList:
+            for idx,cluster in enumerate(clusterList):
                 if cluster['HId'] == simObject['y']['HId']:
                     clusterList.remove(cluster)
-                    break
+                if cluster['HId'] == simObject['x']['HId']:
+                    # cluster['centroid'].tfMap = {}
+                    cluster['centroid'] = simObjectX
+
 
             for simLoop in simList:
                 if simLoop['x'] == simObject['y'] or simLoop['y'] == simObject['y']:
