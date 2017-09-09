@@ -99,15 +99,14 @@ class NewsCluster:
         # initialKValue = 35
         clusterList = []
         RSSValue = 0
-        kWeight = 15
+        kWeight = 0
         while True:
             anotherClusterList = self.getClustersOfKMeans(initialKValue+kWeight)
             anotherRSSValue = self.evalRSS(anotherClusterList)
-            # if clusterList is not None and dunnIndex > anotherDunnIndex:
-            #     return clusterList
-            print(RSSValue / anotherRSSValue)
+            if anotherRSSValue / self.newsNodes.__len__()  < 0.3:
+                return clusterList
             clusterList = anotherClusterList
-            print('k: '+str(kWeight)+', '+str(anotherRSSValue))
+            print('k: '+str(initialKValue+kWeight)+', '+str(anotherRSSValue))
             RSSValue = anotherRSSValue
             kWeight += 1
 
@@ -115,13 +114,13 @@ class NewsCluster:
     def getClustersOfKMeans(self, kValue):
         if self.newsNodes.__len__() < kValue:
             raise Exception('k is must smaller than count of nodes')
-        clusterList = self.getClustersOfHAC(kValue)
+        clusterList = self.getTopDownClusters(kValue)
 
         previousRSSValue = sys.maxsize
         while True:
             clusterList = self.applyClusterInKMeans(self.newsNodes, clusterList)
             anotherRSSValue = self.evalRSS(clusterList)
-            print(str(anotherRSSValue))
+            # print(str(anotherRSSValue))
             # for element in clusterList[0]['elementList']:
                 # print(element.simValue)
                 # print(element.article)
@@ -321,6 +320,24 @@ class NewsCluster:
 
         return clusterList
 
+
+    def getTopDownClusters(self,kValue):
+        if self.newsNodes.__len__() < kValue:
+            raise Exception('k is must smaller than count of nodes')
+        clusterList = []
+        clusterList.append({'centroid': self.newsNodes[0], 'elementList': []})
+        while clusterList.__len__() != kValue:
+            smallestSim = sys.maxsize
+            smallestNode = None
+            for node in self.newsNodes:
+                sumOfSims = 0
+                for idx, cluster in enumerate(clusterList):
+                    sumOfSims += pow(self.getSimilarity(cluster['centroid'],node),2)
+                if smallestSim > sumOfSims:
+                    smallestSim = sumOfSims
+                    smallestNode = node
+            clusterList.append({'centroid': smallestNode, 'elementList': []})
+        return clusterList
 
 
 class NewsNode:
