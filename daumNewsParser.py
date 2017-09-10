@@ -27,11 +27,22 @@ class DaumNewsParse:
                 break
 
             soupHtml = data.find("ul", attrs={'class': 'list_news2 list_allnews'})
-            anchorList = anchorList + (soupHtml.find_all("a",attrs={'class':'link_txt'}))
+            listHtml = soupHtml.find_all("li")
+
+
+            anchorList = anchorList + listHtml
 
 
         for anchorData in anchorList:
-            response.append({'title':anchorData.text, 'href':anchorData['href']})
+            object = {}
+            img = anchorData.find("img",attrs={'class':'thumb_g'})
+            if img is None:
+                img = ''
+            else:
+                img = img['src']
+            anchor = anchorData.find("a", attrs={'class': 'link_txt'})
+
+            response.append({'title': anchor.text, 'thumb': img,'href': anchor['href']})
 
         return response
     def parseArticle(self,url):
