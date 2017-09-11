@@ -1,9 +1,8 @@
-import hashlib
 import re
-from heapq import heappush, heappop, nlargest
 import sys
-from konlpy.tag import Mecab
 from math import log, sqrt
+
+from konlpy.tag import Mecab
 
 
 class NewsCluster:
@@ -46,6 +45,8 @@ class NewsCluster:
             if bool(re.search('ETM',type)):
                 continue
             newsNode.__add__(element)
+
+
         self.calcTf(newsNode)
 
         return newsNode
@@ -54,17 +55,22 @@ class NewsCluster:
             newsNode.tfMap[key]['tf'] = 0.5 + 0.5 * newsNode.tfMap[key]['count'] / newsNode.countTerms
     # def extractIdf(self):
     def setIdfInNewsNode(self):
+        termMap = {}
+        for news in self.newsNodes:
+            for term in news.tfMap.keys():
+                if term not in termMap.keys():
+                    termMap[term] = news.tfMap[term]['count']
+                else:
+                    termMap[term] += news.tfMap[term]['count']
+
         for news in self.newsNodes:
             # print(news.tfMap)
             for term in news.tfMap.keys():
-                news.tfMap[term]['idf'] = self.getIdfValue(term)
+                news.tfMap[term]['idf'] = self.getIdfValue(term,termMap)
                 news.tfMap[term]['tfidf'] = news.tfMap[term]['tf'] * news.tfMap[term]['idf']
 
-    def getIdfValue(self, term):
-        matchedCount = 0
-        for news in self.newsNodes:
-            if term in news.tfMap.keys():
-                matchedCount += 1
+    def getIdfValue(self, term,termMap):
+        matchedCount = termMap[term]
         # @ Critical issue : 어떠한 상황에서 idf 값이 마이너스가 나옴. 수식에서 마이너스의 가능성을 찾아보고 그에 대한 방안을 마련할 필요가 있다
         return log(self.newsNodes.__len__() / (1 + matchedCount))
 
@@ -265,9 +271,12 @@ class NewsCluster:
         newsNodeForCentroid.article = allarticles
         return newsNodeForCentroid
 
-    def runOfKMeans(self, articleList):
+    def runOfKMeans(self, articleList,**kwargs):
         self.extractTfFromArticleList(articleList)
         self.setIdfInNewsNode()
+        if kwargs.get('extraList',None) is not None:
+            for idx,extra in enumerate(kwargs.get('extraList')):
+                self.newsNodes[idx].extra = extra
         return self.getClustersOfKMeansHandler()
     def runOfHAC(self,articleList):
         self.extractTfFromArticleList(articleList)
@@ -346,6 +355,7 @@ class NewsNode:
         self.article = ''
         self.tfMap = {}
         self.simValue = 0
+        self.extra = {}
 
     def __add__(self, element):
 
