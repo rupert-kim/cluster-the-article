@@ -1,8 +1,10 @@
+import copy
+import hashlib
 import re
+from heapq import heappush, heappop, nlargest
 import sys
-from math import log, sqrt
-
 from konlpy.tag import Mecab
+from math import log, sqrt
 
 
 class NewsCluster:
@@ -10,6 +12,7 @@ class NewsCluster:
         self.trash = 0
         self.nlpWorker = Mecab()
         self.newsNodes = []
+        self.simMap = {}
 
     def extractTfFromArticleList(self, articleList):
         for article in articleList:
@@ -20,7 +23,7 @@ class NewsCluster:
     def extractTf(self, article):
         afterNLP = self.nlpWorker.pos(article)
 
-        newsNode = NewsNode()
+        newsNode = NewsNode(self.newsNodes.__len__())
         newsNode.article = article
         for element in afterNLP:
             term = element[0]
@@ -75,6 +78,10 @@ class NewsCluster:
         return log(self.newsNodes.__len__() / (1 + matchedCount))
 
     def getSimilarity(self, articleOne, articleTwo):
+        hasCentroid = False if articleTwo.id is not None and articleOne.id is not None else True
+        if hasCentroid is False and self.simMap.get(articleOne.id,{}).get(articleTwo.id,None) is not None:
+            return self.simMap[articleOne.id][articleTwo.id]
+
         groupTfMap = list(articleOne.tfMap.keys()) + list(articleTwo.tfMap.keys())
         groupTfMap = set(groupTfMap)
         docProductNumber = 0
@@ -94,6 +101,13 @@ class NewsCluster:
             euclideanLenOfOne += pow(tfidfOne, 2)
             euclideanLenOfTwo += pow(tfidfTwo, 2)
         similarity = docProductNumber / (1 + sqrt(euclideanLenOfOne) * sqrt(euclideanLenOfTwo))
+        if hasCentroid is False:
+            if self.simMap.get(articleOne.id,None) is None:
+                self.simMap[articleOne.id] = {}
+            if self.simMap.get(articleTwo.id,None) is None:
+                self.simMap[articleTwo.id] = {}
+            self.simMap[articleOne.id][articleTwo.id] = similarity
+            self.simMap[articleTwo.id][articleOne.id] = similarity
 
         return similarity
 
@@ -106,27 +120,29 @@ class NewsCluster:
         clusterList = []
         RSSValue = 0
         kWeight = 0
+
+        originClusterList = self.getTopDownClusters(initialKValue+kWeight)
+
         while True:
-            anotherClusterList = self.getClustersOfKMeans(initialKValue+kWeight)
+            anotherClusterList = self.getClustersOfKMeans(initialKValue+kWeight,copy.deepcopy(originClusterList))
             anotherRSSValue = self.evalRSS(anotherClusterList)
-            if anotherRSSValue / self.newsNodes.__len__()  < 0.3:
+            if anotherRSSValue / self.newsNodes.__len__()  < 0.35:
                 return clusterList
             clusterList = anotherClusterList
             print('k: '+str(initialKValue+kWeight)+', '+str(anotherRSSValue))
             RSSValue = anotherRSSValue
             kWeight += 1
+            originClusterList = self.getTopDownClusters(initialKValue + kWeight,clusterList=originClusterList)
 
+    def getClustersOfKMeans(self, kValue,clusterList):
 
-    def getClustersOfKMeans(self, kValue):
-        if self.newsNodes.__len__() < kValue:
-            raise Exception('k is must smaller than count of nodes')
-        clusterList = self.getTopDownClusters(kValue)
+        # clusterList = self.getTopDownClusters(kValue)
 
         previousRSSValue = sys.maxsize
         while True:
             clusterList = self.applyClusterInKMeans(self.newsNodes, clusterList)
             anotherRSSValue = self.evalRSS(clusterList)
-            # print(str(anotherRSSValue))
+            print(str(anotherRSSValue))
             # for element in clusterList[0]['elementList']:
                 # print(element.simValue)
                 # print(element.article)
@@ -242,11 +258,9 @@ class NewsCluster:
     def makeCentroidWithNewsList(self,newsList):
 
         tfMap = {}
-        allarticles = ""
 
-        for listElement in newsList:
-            allarticles += listElement.article
-            for key, pureTfElement in listElement.tfMap.items():
+        for news in newsList:
+            for key, pureTfElement in news.tfMap.items():
 
                 if key not in tfMap:
                     tfMap[key] = {}
@@ -261,14 +275,13 @@ class NewsCluster:
         for key in tfMap.keys():
             tfMap[key]['count'] /= newsList.__len__()
 
-        newsNodeForCentroid = NewsNode()
+        newsNodeForCentroid = NewsNode(None)
         newsNodeForCentroid.tfMap = tfMap
         newsNodeForCentroid.recalcCountTerms()
         self.calcTf(newsNodeForCentroid)
         for key in tfMap.keys():
             tfMap[key]['tfidf'] = tfMap[key]['tf'] * tfMap[key]['idf']
 
-        newsNodeForCentroid.article = allarticles
         return newsNodeForCentroid
 
     def runOfKMeans(self, articleList,**kwargs):
@@ -330,11 +343,14 @@ class NewsCluster:
         return clusterList
 
 
-    def getTopDownClusters(self,kValue):
+    def getTopDownClusters(self,kValue,**kwargs):
         if self.newsNodes.__len__() < kValue:
             raise Exception('k is must smaller than count of nodes')
         clusterList = []
-        clusterList.append({'centroid': self.newsNodes[0], 'elementList': []})
+        if 'clusterList' in kwargs.keys():
+            clusterList = kwargs['clusterList']
+        else:
+            clusterList.append({'centroid': self.newsNodes[0], 'elementList': []})
         while clusterList.__len__() != kValue:
             smallestSim = sys.maxsize
             smallestNode = None
@@ -350,7 +366,8 @@ class NewsCluster:
 
 
 class NewsNode:
-    def __init__(self):
+    def __init__(self,id):
+        self.id = id
         self.countTerms = 0
         self.article = ''
         self.tfMap = {}
