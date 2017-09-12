@@ -82,8 +82,8 @@ class NewsCluster:
         if hasCentroid is False and self.simMap.get(articleOne.id,{}).get(articleTwo.id,None) is not None:
             return self.simMap[articleOne.id][articleTwo.id]
 
-        groupTfMap = list(articleOne.tfMap.keys()) + list(articleTwo.tfMap.keys())
-        groupTfMap = set(groupTfMap)
+        groupTfMap = set(articleOne.tfMap.keys())
+        groupTfMap.update(articleTwo.tfMap.keys())
         docProductNumber = 0
         euclideanLenOfOne = 0
         euclideanLenOfTwo = 0
