@@ -3,6 +3,8 @@ import hashlib
 import re
 from heapq import heappush, heappop, nlargest
 import sys
+
+import numpy as np
 from konlpy.tag import Mecab
 from math import log, sqrt
 
@@ -82,8 +84,8 @@ class NewsCluster:
         if hasCentroid is False and self.simMap.get(articleOne.id,{}).get(articleTwo.id,None) is not None:
             return self.simMap[articleOne.id][articleTwo.id]
 
-        groupTfMap = set(articleOne.tfMap.keys())
-        groupTfMap.update(articleTwo.tfMap.keys())
+        groupTfMap = list(articleOne.tfMap.keys()) + list(articleTwo.tfMap.keys())
+        groupTfMap = set(groupTfMap)
         docProductNumber = 0
         euclideanLenOfOne = 0
         euclideanLenOfTwo = 0
@@ -259,21 +261,29 @@ class NewsCluster:
 
         tfMap = {}
 
+        vectorSets = set([])
+        vectorValues = []
         for news in newsList:
-            for key, pureTfElement in news.tfMap.items():
+            vectorSets.update(news.tfMap.keys())
 
-                if key not in tfMap:
-                    tfMap[key] = {}
-                    tfElement = tfMap[key]
-                    tfElement['count'] = pureTfElement['count']
-                    tfElement['idf'] = pureTfElement['idf']
-                    tfElement['type'] = pureTfElement['type']
+        for nKey, news in enumerate(newsList):
+            vectorValues.append([])
+            for key in vectorSets:
+                if news.tfMap.get(key, None) is None:
+                    vectorValues[nKey].append(0)
                 else:
-                    tfElement = tfMap[key]
-                    tfElement['count'] += pureTfElement['count']
+                    if tfMap.get(key,None) is None:
+                        tfMap[key] = {}
+                        tfElement = tfMap[key]
+                        tfElement['count'] = 0
+                        tfElement['idf'] = news.tfMap[key]['idf']
+                        tfElement['type'] = news.tfMap[key]['type']
+                    tf = news.tfMap.get(key, 0)
+                    vectorValues[nKey].append(0 if tf == 0 else tf['count'])
+        resultSet = np.average(vectorValues, axis=0)
 
-        for key in tfMap.keys():
-            tfMap[key]['count'] /= newsList.__len__()
+        for idx,word in enumerate(vectorSets):
+            tfMap[word]['count'] = resultSet[idx]
 
         newsNodeForCentroid = NewsNode(None)
         newsNodeForCentroid.tfMap = tfMap
