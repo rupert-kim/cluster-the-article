@@ -1,2 +1,2 @@
 numpy
-konlpy
+konlpy==0.4.3
