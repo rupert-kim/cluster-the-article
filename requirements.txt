@@ -1,3 +1,2 @@
 numpy
-sqrt
-log
+konlpy

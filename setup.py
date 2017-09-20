@@ -11,7 +11,6 @@ setup(
     license='MIT',
     install_requires=[
         'numpy',
-        'sqrt',
-        'log',
+        'konlpy'
     ]
 )
