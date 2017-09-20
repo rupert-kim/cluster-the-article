@@ -1,0 +1,3 @@
+numpy
+sqrt
+log

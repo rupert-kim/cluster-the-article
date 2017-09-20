@@ -10,9 +10,7 @@ setup(
     author_email='my@rupert.in',
     license='MIT',
     install_requires=[
-        
         'numpy',
-        'Mecab',
         'sqrt',
         'log',
     ]
