@@ -9,9 +9,6 @@ setup(
     author='rupert kim',
     author_email='my@rupert.in',
     license='MIT',
-    packages=[
-        'cluster_the_article',
-    ],
     install_requires=[
         'copy',
         'sys',
