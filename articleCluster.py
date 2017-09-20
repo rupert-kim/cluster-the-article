@@ -1,10 +1,7 @@
-import copy
-import hashlib
-import re
-from heapq import heappush, heappop, nlargest
 import sys
-
+import copy
 import numpy as np
+import re
 from konlpy.tag import Mecab
 from math import log, sqrt
 

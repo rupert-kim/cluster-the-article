@@ -1,7 +1,7 @@
+from datetime import datetime
 
-
-from daumNewsParser import DaumNewsParse
-from newsCluster import NewsCluster
+from articleCluster import NewsCluster
+from example.daumNewsParser import DaumNewsParse
 
 parser = DaumNewsParse()
 clusterManager = NewsCluster()
@@ -17,7 +17,9 @@ for urlObject in urlList:
     if article is not None:
         articleList.append(article)
 
-clusterManager.runOfKMeans(articleList)
+
+clusterList = clusterManager.runOfKMeans(articleList)
+
+# clusterManager.runOfHAC(articleList)
 
 
-print('-----')
