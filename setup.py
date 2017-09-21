@@ -13,5 +13,8 @@ setup(
         'numpy',
         'konlpy'
     ],
-    packages=['lib']
+    packages=[
+        'lib',
+        'lib.clusterTheArticle',
+              ]
 )
