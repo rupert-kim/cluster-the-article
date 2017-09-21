@@ -1,11 +1,11 @@
 from example.daumNewsParser import DaumNewsParse
-from lib.articleCluster import ArticleCluster
+from lib.clusterTheArticle.articleCluster import ArticleCluster
 
 parser = DaumNewsParse()
 clusterManager = ArticleCluster()
 newsNodes = []
 articleList = []
-urlList = parser.parseUrlList(paramDate='20160115')
+urlList = parser.parseUrlList(paramDate='20170715')
 print(urlList.__len__())
 number = 0
 for urlObject in urlList:
