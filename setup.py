@@ -16,5 +16,6 @@ setup(
     packages=[
         'lib',
         'lib.clusterTheArticle',
+        'lib.clusterTheArticle.articleCluster'
               ]
 )
