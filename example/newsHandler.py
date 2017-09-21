@@ -1,5 +1,5 @@
+from clusterTheArticle import ArticleCluster
 from example.daumNewsParser import DaumNewsParse
-from lib.clusterTheArticle.articleCluster import ArticleCluster
 
 parser = DaumNewsParse()
 clusterManager = ArticleCluster()
