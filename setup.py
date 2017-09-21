@@ -5,7 +5,7 @@ setup(
     name='cluster_the_article',
     version='0.0.1',
     description='',
-    url='https://github.com/yoonsubKim/cluster-the-news.git',
+    url='https://github.com/yoonsubKim/cluster-the-article.git',
     author='rupert kim',
     author_email='my@rupert.in',
     license='MIT',
