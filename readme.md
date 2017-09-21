@@ -28,5 +28,5 @@ clusterList = clusterManager.runOfKMeans(articleList)
 ## other things
 + If you want to check the program that I made with this Library. Check out this
 ```
-https://github.com/yoonsubKim/cluster-the-news
+https://github.com/yoonsubKim/cluster-the-news-webapp
 ```
