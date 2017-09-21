@@ -1,4 +1,5 @@
-from setuptools import setup, find_packages
+from setuptools import setup
+
 
 setup(
     name='cluster_the_article',
@@ -12,5 +13,5 @@ setup(
         'numpy',
         'konlpy'
     ],
-    packages=find_packages('lib.clusterTheArticle'),
+    packages=['lib']
 )
