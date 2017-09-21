@@ -1,10 +1,8 @@
-from datetime import datetime
-
-from articleCluster import NewsCluster
 from example.daumNewsParser import DaumNewsParse
+from lib.articleCluster import ArticleCluster
 
 parser = DaumNewsParse()
-clusterManager = NewsCluster()
+clusterManager = ArticleCluster()
 newsNodes = []
 articleList = []
 urlList = parser.parseUrlList(paramDate='20160115')

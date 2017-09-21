@@ -12,5 +12,6 @@ setup(
     install_requires=[
         'numpy',
         'konlpy'
-    ]
+    ],
+    packages=['lib.articleCluster']
 )

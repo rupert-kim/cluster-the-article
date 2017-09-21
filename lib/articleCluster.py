@@ -6,7 +6,7 @@ from konlpy.tag import Mecab
 from math import log, sqrt
 
 
-class NewsCluster:
+class ArticleCluster:
     def __init__(self):
         self.trash = 0
         self.nlpWorker = Mecab()
