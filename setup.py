@@ -14,6 +14,6 @@ setup(
         'konlpy'
     ],
     packages=[
-        'lib'
+        'clusterTheArticle',
               ]
 )
