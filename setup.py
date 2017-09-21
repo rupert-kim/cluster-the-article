@@ -13,4 +13,5 @@ setup(
         'numpy',
         'konlpy'
     ],
+    packages=['lib']
 )
