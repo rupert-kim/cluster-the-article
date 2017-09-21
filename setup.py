@@ -13,5 +13,6 @@ setup(
         'numpy',
         'konlpy'
     ],
-    packages=['lib']
+    packages=['articleCluster'],
+    package_dir={'articleCluster': 'lib'}
 )
