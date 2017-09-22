@@ -25,7 +25,6 @@ clusterList = clusterManager.runOfKMeans(articleList)
 
 ```
 
-![](https://github.com/yoonsubKim/cluster-the-article/blob/master/example/article%20network%20example.gif?raw=true)
 
 
 ## Work Flow of the algorithm
@@ -47,3 +46,5 @@ clusterList = clusterManager.runOfKMeans(articleList)
 ```
 https://github.com/yoonsubKim/cluster-the-news-webapp
 ```
++ preview of interface
+![](https://github.com/yoonsubKim/cluster-the-article/blob/master/example/article%20network%20example.gif?raw=true)
