@@ -24,7 +24,11 @@ clusterManager = ArticleCluster()
 clusterList = clusterManager.runOfKMeans(articleList)
 
 ```
-## Work Flow
+
+![](https://github.com/yoonsubKim/cluster-the-article/blob/master/example/article%20network%20example.gif?raw=true)
+
+
+## Work Flow of the algorithm
 1. Making vector value
 > + To measure similarity between articles, makes term group of all articles through morpheme analyzer and extract vector value of each term with TF-IDF
 2. Deciding K value of K-Means and centroids
