@@ -24,6 +24,19 @@ clusterManager = ArticleCluster()
 clusterList = clusterManager.runOfKMeans(articleList)
 
 ```
+## Work Flow
+1. Making vector value
+> + To measure similarity between articles, makes term group of all articles through morpheme analyzer and extract vector value of each term with TF-IDF
+2. Deciding K value of K-Means and centroids
+> + For starting from the enough number of cluster, K is started from √(n/2)
+> + To take an efficient result, the article that is the furthest one from other centroids is selected, and it is set to the centroid of the new cluster; this is following the rule of the top down clustering of the Hierarchical Cluster policy.
+> + The distance of similarity of between a couple of articles is measured with Cosine Similarity
+3. Making clusters
+> + through the Cosine Similarity, all articles are linked to centroids that are made in pre-step
+4. Adjusting the position of centroids
+> + After clustering the articles, every cluster makes centroid move with the vector value of TF, and keep repeating this process until all nodes don’t move.
+5. Repeat or response the clusters
+> + the RSS value(Residual Sum of Squares) is measured and compared with pre-process what the value is decreased enough. the value is fixed to 0.4. If the value doesn't satisfy the criteria, the process is repeated with grown K + 1 value.
 
 ## other things
 + If you want to check the program that I made with this Library. Check out this
